@@ -1,0 +1,121 @@
+﻿.tabs-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--c-surface);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--c-border);
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 56px;
+  position: relative;
+  z-index: 2;
+}
+
+.tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 8px 14px;
+  background: var(--c-surface-hover);
+  color: var(--c-text-muted);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tab-title {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-item:hover {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+  background: var(--c-primary-bg);
+}
+
+.tab-item.active {
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+  font-weight: 500;
+}
+
+.tab-close-btn {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.72;
+}
+
+.tab-close-btn:hover:enabled {
+  background: rgb(15 23 42 / 10%);
+  opacity: 1;
+}
+
+.tab-close-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tab-add-btn {
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 8px;
+  background: var(--c-surface-hover);
+  border: 1px dashed var(--c-border);
+  border-radius: 999px;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-add-btn:hover {
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+  background: var(--c-primary-bg);
+}
+
+.tab-add-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--c-text-muted);
+}
+
+.search-input {
+  padding-left: 32px !important;
+}
+

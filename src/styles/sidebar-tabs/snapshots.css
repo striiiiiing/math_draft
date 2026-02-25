@@ -1,0 +1,134 @@
+﻿.sidebar-actions {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--c-border);
+  display: flex;
+  gap: 8px;
+  background: var(--c-bg);
+  flex-wrap: wrap;
+}
+
+.snapshot-card {
+  padding: 16px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.snapshot-card:hover {
+  background-color: var(--c-surface-hover);
+}
+
+.snapshot-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.snapshot-header input[type="checkbox"] {
+  margin-top: 4px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.snapshot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.snapshot-info h4 {
+  margin: 0 0 2px 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+
+.rename-input {
+  padding: 2px 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.snapshot-info time {
+  font-size: 0.75rem;
+  color: var(--c-text-muted);
+}
+
+.snapshot-preview {
+  font-size: 0.875rem;
+  color: var(--c-text-muted);
+  background: var(--c-bg);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+.snapshot-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--c-text-muted);
+  font-size: 0.875rem;
+}
+
+.empty-text {
+  background: var(--c-bg);
+  border: 1px dashed var(--c-border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.copy-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.copy-dropdown .copy-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 184px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  z-index: 40;
+}
+
+.copy-dropdown:hover .copy-menu,
+.copy-dropdown:focus-within .copy-menu {
+  display: block;
+}
+
+.copy-menu button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--c-text-main);
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.copy-menu button:hover {
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+}
+

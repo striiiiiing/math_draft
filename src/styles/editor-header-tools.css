@@ -1,0 +1,244 @@
+﻿.main-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: var(--c-bg);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background-color: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.title-input {
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  color: var(--c-text-main);
+  outline: none;
+  border-radius: var(--radius-sm);
+  width: 100%;
+}
+
+.title-input:hover,
+.title-input:focus {
+  background-color: var(--c-surface-hover);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.header-actions-collapsible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--c-border);
+  margin: 0 4px;
+}
+
+.combo-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--c-bg);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+}
+
+.unstyled-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-width: 140px;
+  padding: 6px 10px;
+}
+
+.top-tools-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.toolbar-meta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar-hint {
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+}
+
+.toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--c-text-muted);
+  font-size: 0.85rem;
+  user-select: none;
+  cursor: pointer;
+}
+
+.toolbar-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--c-primary);
+}
+
+.tool-btn {
+  padding: 4px 12px;
+  font-size: 0.875rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 100px;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+
+.tool-btn:hover {
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.editor-content {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.output-panel {
+  flex-shrink: 0;
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.output-panel.collapsed .output-header {
+  border-bottom: none;
+}
+
+.output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--c-surface-hover);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.output-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.output-title strong {
+  font-size: 0.9rem;
+}
+
+.output-title span {
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+}
+
+.output-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.output-mode-btn {
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.output-mode-btn:hover {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+
+.output-mode-btn.active {
+  background: var(--c-primary-bg);
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+
+.output-body {
+  padding: 10px 16px 14px;
+}
+
+.output-render-wrap {
+  width: 100%;
+  height: 420px;
+  min-height: 220px;
+  resize: vertical;
+  max-height: none;
+  overflow: auto;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.output-render-field {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  font-size: 1.35rem;
+  line-height: 1.55;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.output-empty {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+}
+

@@ -1,0 +1,90 @@
+@media (max-width: 1200px) {
+  .workspace-sidebar {
+    width: 280px;
+  }
+
+  .assistant-sidebar {
+    width: 360px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .workspace-sidebar {
+    display: none;
+  }
+
+  .assistant-sidebar {
+    width: 340px;
+  }
+
+  .editor-content {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 900px) {
+  .assistant-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .main-editor {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .editor-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tabs-container {
+    min-height: 52px;
+    padding: 8px 12px;
+  }
+
+  .toolbar-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .output-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .output-actions {
+    width: 100%;
+  }
+
+  .output-render-wrap {
+    height: 260px;
+    min-height: 200px;
+  }
+
+  .math-line {
+    flex-wrap: wrap;
+  }
+
+  .line-actions {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
+    padding: 0;
+    margin-left: 36px;
+    background: transparent;
+    backdrop-filter: none;
+  }
+}

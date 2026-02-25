@@ -214,5 +214,4 @@ npm run preview
 
 ## 13. License
 
-当前仓库未附带 `LICENSE` 文件。
-如需开源发布，请补充许可证文本。
+MIT License

@@ -1,7 +1,7 @@
 ﻿# Math Scratch
 
 Math Scratch 是一个面向数学推导场景的前端工作台（Vue 3 + MathLive）。
-它不是“单条公式编辑器”，而是把推导过程拆成可管理的“行/页/草稿本”，并提供历史快照、回收站、导入导出和 AI 助手。
+它不是“单条公式编辑器”，而是把推导过程拆成可管理的“行/页/草稿本”，并提供历史快照、回收站、导入导出、坚果云同步和 AI 助手。
 详细使用说明见 `help.md`。
 
 ## 1. 项目定位
@@ -11,6 +11,7 @@ Math Scratch 是一个面向数学推导场景的前端工作台（Vue 3 + MathL
 - 逐行推导：每一步都可编辑、可复制、可删除。
 - 过程可回溯：随时保存快照并恢复。
 - 本地优先：无需项目自建后端，开箱即用。
+- 云端备份：支持通过坚果云 WebDAV 做手动/自动同步并恢复历史版本。
 - AI 辅助：在已有上下文上继续推导，而不是孤立问答。
 
 ## 2. 主要功能
@@ -43,6 +44,8 @@ Math Scratch 是一个面向数学推导场景的前端工作台（Vue 3 + MathL
 - 导出当前草稿本。
 - 导出草稿本 + 快照组合包。
 - 导出全部草稿本备份。
+- 导出/导入时可勾选是否包含 AI 会话记录。
+- 支持单独导出 AI 会话 JSON、单独导入 AI 会话 JSON。
 - JSON 导入时采用“追加”策略，不覆盖现有内容。
 
 ### 2.5 AI 助手（OpenAI 兼容）
@@ -55,6 +58,14 @@ Math Scratch 是一个面向数学推导场景的前端工作台（Vue 3 + MathL
 - 思考模式：`off` / `on` / `deep`。
 - 流式接收并实时渲染。
 - 支持 `<think>...</think>` 思考块解析；响应结束后自动收起思考块。
+
+### 2.6 坚果云同步（WebDAV）
+
+- 支持手动同步到坚果云（WebDAV 地址默认 `https://dav.jianguoyun.com/dav/`，可改为任意兼容地址）。
+- 支持按固定频率自动同步（分钟级）。
+- 支持远程历史版本列表与一键恢复。
+- 最大备份数可配置；可切换为“无限制”。
+- WebDAV 同步/恢复会遵循“导出时包含 AI 会话记录 / 导入时应用 AI 会话记录”勾选项。
 
 ## 3. AI 请求与流式渲染机制
 
@@ -107,6 +118,7 @@ src/
 │     ├─ historyActions.js
 │     ├─ recycleBinActions.js
 │     ├─ exportImportActions.js
+│     ├─ nutstoreSyncActions.js
 │     ├─ aiAssistantActions.js
 │     └─ aiAssistant/
 │        ├─ constants.js
@@ -136,6 +148,7 @@ src/
 - `src/composables/workbench/historyActions.js`：快照逻辑。
 - `src/composables/workbench/recycleBinActions.js`：回收站逻辑。
 - `src/composables/workbench/exportImportActions.js`：导入导出逻辑。
+- `src/composables/workbench/nutstoreSyncActions.js`：坚果云 WebDAV 同步与历史恢复逻辑。
 - `src/composables/workbench/workbenchLifecycle.js`：持久化与生命周期监听。
 - `src/composables/workbench/aiStore.js`：AI 存储结构归一化。
 - `src/composables/workbench/aiContext.js`：AI 上下文摘要与拼装。
@@ -150,6 +163,8 @@ src/
 - `math-scratch.recycle-bin.v1`
 - `math-scratch.enter-equation-line-on-enter.v1`
 - `math-scratch.ai-assistant.v1`
+- `math-scratch.nutstore-sync.v1`
+- `math-scratch.import-export-options.v1`
 
 导入导出数据版本为 `version: 3`。
 
@@ -187,6 +202,7 @@ npm run preview
 3. 需要分支尝试时，新建页面或恢复快照。
 4. 需要外发时，按目标格式导出或复制。
 5. 使用 AI 时按需切换上下文来源，保证回答贴近当前推导。
+6. 关键阶段执行坚果云手动同步；若开启自动同步，定期检查历史版本是否生成。
 
 ## 11. 常见问题
 
@@ -205,6 +221,12 @@ npm run preview
 
 - 检查上下文模式是否设为 `current-flow` / `selected-lines` / `whole-notebook`。
 - 检查系统提示词是否被误改。
+
+### Q4：坚果云同步失败怎么办？
+
+- 优先确认使用的是坚果云 WebDAV 地址（默认 `https://dav.jianguoyun.com/dav/`）。
+- 使用“应用密码”而不是登录密码。
+- 检查 `WebDAV 地址 / 用户名 / 应用密码` 三项是否填写完整。
 
 ## 12. 开发与维护注意事项
 

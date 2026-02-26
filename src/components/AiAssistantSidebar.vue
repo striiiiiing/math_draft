@@ -19,6 +19,13 @@ const props = defineProps({
   aiThinkingMode: { type: String, default: 'off' },
   aiIsRequesting: { type: Boolean, default: false },
   aiLastError: { type: String, default: '' },
+  includeAiOnExport: { type: Boolean, default: true },
+  includeAiOnImport: { type: Boolean, default: true },
+  nutstoreSyncSettings: { type: Object, default: () => ({}) },
+  nutstoreBackupHistory: { type: Array, default: () => [] },
+  nutstoreIsSyncing: { type: Boolean, default: false },
+  nutstoreLastError: { type: String, default: '' },
+  nutstoreConnectionReady: { type: Boolean, default: false },
   activeAiSession: { type: Object, default: null },
   activeAiEndpoint: { type: Object, default: null },
   activeAiSystemPrompt: { type: Object, default: null },
@@ -42,8 +49,16 @@ const props = defineProps({
   createAiSystemPromptAction: { type: Function, required: true },
   removeAiSystemPrompt: { type: Function, required: true },
   updateAiSystemPromptField: { type: Function, required: true },
+  setIncludeAiOnExport: { type: Function, required: true },
+  setIncludeAiOnImport: { type: Function, required: true },
+  updateNutstoreSyncField: { type: Function, required: true },
+  syncToNutstore: { type: Function, required: true },
+  refreshNutstoreBackups: { type: Function, required: true },
+  restoreNutstoreBackup: { type: Function, required: true },
   exportCurrentNotebook: { type: Function, required: true },
   exportNotebookBundle: { type: Function, required: true },
+  exportAiStore: { type: Function, required: true },
+  triggerAiImport: { type: Function, required: true },
   clearDraft: { type: Function, required: true },
 });
 
@@ -60,6 +75,13 @@ const aiContextMode = computed(() => props.aiContextMode);
 const aiThinkingMode = computed(() => props.aiThinkingMode);
 const aiIsRequesting = computed(() => props.aiIsRequesting);
 const aiLastError = computed(() => props.aiLastError);
+const includeAiOnExport = computed(() => props.includeAiOnExport);
+const includeAiOnImport = computed(() => props.includeAiOnImport);
+const nutstoreSyncSettings = computed(() => props.nutstoreSyncSettings || {});
+const nutstoreBackupHistory = computed(() => props.nutstoreBackupHistory || []);
+const nutstoreIsSyncing = computed(() => props.nutstoreIsSyncing);
+const nutstoreLastError = computed(() => props.nutstoreLastError);
+const nutstoreConnectionReady = computed(() => props.nutstoreConnectionReady);
 const activeAiSession = computed(() => props.activeAiSession);
 const activeAiEndpoint = computed(() => props.activeAiEndpoint);
 const activeAiSystemPrompt = computed(() => props.activeAiSystemPrompt);
@@ -84,8 +106,16 @@ const selectAiSystemPrompt = (...args) => props.selectAiSystemPrompt(...args);
 const createAiSystemPromptAction = (...args) => props.createAiSystemPromptAction(...args);
 const removeAiSystemPrompt = (...args) => props.removeAiSystemPrompt(...args);
 const updateAiSystemPromptField = (...args) => props.updateAiSystemPromptField(...args);
+const setIncludeAiOnExport = (...args) => props.setIncludeAiOnExport(...args);
+const setIncludeAiOnImport = (...args) => props.setIncludeAiOnImport(...args);
+const updateNutstoreSyncField = (...args) => props.updateNutstoreSyncField(...args);
+const syncToNutstore = (...args) => props.syncToNutstore(...args);
+const refreshNutstoreBackups = (...args) => props.refreshNutstoreBackups(...args);
+const restoreNutstoreBackup = (...args) => props.restoreNutstoreBackup(...args);
 const exportCurrentNotebook = (...args) => props.exportCurrentNotebook(...args);
 const exportNotebookBundle = (...args) => props.exportNotebookBundle(...args);
+const exportAiStore = (...args) => props.exportAiStore(...args);
+const triggerAiImport = (...args) => props.triggerAiImport(...args);
 const clearDraft = (...args) => props.clearDraft(...args);
 
 const rootRef = ref(null);
@@ -456,6 +486,46 @@ function handleToggleEnterCreatesEquationLine(event) {
   emit('update:enterCreatesEquationLine', Boolean(event?.target?.checked));
 }
 
+function formatBackupSize(size) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function handleNutstoreTextField(field, event) {
+  updateNutstoreSyncField(field, event?.target?.value ?? '');
+}
+
+function handleNutstoreToggle(field, event) {
+  updateNutstoreSyncField(field, Boolean(event?.target?.checked));
+}
+
+function handleNutstoreNumberField(field, event) {
+  updateNutstoreSyncField(field, event?.target?.value ?? '');
+}
+
+function handleToggleIncludeAiOnExport(event) {
+  setIncludeAiOnExport(Boolean(event?.target?.checked));
+}
+
+function handleToggleIncludeAiOnImport(event) {
+  setIncludeAiOnImport(Boolean(event?.target?.checked));
+}
+
+async function handleNutstoreManualSync() {
+  await syncToNutstore();
+}
+
+async function handleNutstoreRefresh() {
+  await refreshNutstoreBackups();
+}
+
+async function handleNutstoreRestore(item) {
+  await restoreNutstoreBackup(item);
+}
+
 function collapseAllThinkingBlocks() {
   const root = rootRef.value;
   if (!root) return;
@@ -601,10 +671,86 @@ watch(() => props.aiIsRequesting, async (isRequesting, previous) => {
         </div>
 
         <div class="ai-settings-card">
+          <div class="ai-section-title">
+            <strong>坚果云同步</strong>
+            <div class="ai-inline-actions">
+              <button class="btn btn-sm" :disabled="nutstoreIsSyncing" @click="handleNutstoreManualSync">{{ nutstoreIsSyncing ? '同步中...' : '手动同步' }}</button>
+              <button class="btn btn-sm" :disabled="nutstoreIsSyncing" @click="handleNutstoreRefresh">刷新历史</button>
+            </div>
+          </div>
+
+          <label class="ai-field-label">WebDAV 地址</label>
+          <input class="input-base" :value="nutstoreSyncSettings.baseUrl" placeholder="https://dav.jianguoyun.com/dav/" @input="handleNutstoreTextField('baseUrl', $event)" />
+          <label class="ai-field-label">用户名</label>
+          <input class="input-base" :value="nutstoreSyncSettings.username" placeholder="坚果云账号" @input="handleNutstoreTextField('username', $event)" />
+          <label class="ai-field-label">应用密码</label>
+          <input class="input-base" :value="nutstoreSyncSettings.password" type="password" autocomplete="off" placeholder="建议使用坚果云应用密码" @input="handleNutstoreTextField('password', $event)" />
+          <label class="ai-field-label">远程目录</label>
+          <input class="input-base" :value="nutstoreSyncSettings.backupDir" placeholder="MathScratchBackups" @input="handleNutstoreTextField('backupDir', $event)" />
+
+          <div class="nutstore-switches">
+            <label class="toolbar-toggle">
+              <input :checked="nutstoreSyncSettings.autoSyncEnabled" type="checkbox" @change="handleNutstoreToggle('autoSyncEnabled', $event)" />
+              <span>启用自动同步</span>
+            </label>
+            <label class="toolbar-toggle">
+              <input :checked="nutstoreSyncSettings.unlimitedBackups" type="checkbox" @change="handleNutstoreToggle('unlimitedBackups', $event)" />
+              <span>备份数不设上限</span>
+            </label>
+            <label class="toolbar-toggle">
+              <input :checked="includeAiOnExport" type="checkbox" @change="handleToggleIncludeAiOnExport" />
+              <span>导出/同步时包含 AI 会话记录</span>
+            </label>
+            <label class="toolbar-toggle">
+              <input :checked="includeAiOnImport" type="checkbox" @change="handleToggleIncludeAiOnImport" />
+              <span>导入/恢复时应用 AI 会话记录</span>
+            </label>
+          </div>
+
+          <div class="nutstore-number-fields">
+            <label class="ai-field-label">自动同步频率（分钟）</label>
+            <input class="input-base" type="number" min="1" max="1440" :value="nutstoreSyncSettings.autoSyncMinutes" @input="handleNutstoreNumberField('autoSyncMinutes', $event)" />
+            <label class="ai-field-label">最大备份数</label>
+            <input
+              class="input-base"
+              type="number"
+              min="1"
+              :disabled="nutstoreSyncSettings.unlimitedBackups"
+              :value="nutstoreSyncSettings.maxBackups"
+              @input="handleNutstoreNumberField('maxBackups', $event)"
+            />
+          </div>
+
+          <p class="ai-context-summary">
+            状态：{{ nutstoreConnectionReady ? '配置已就绪' : '请补全地址/用户名/密码' }}
+            <template v-if="nutstoreSyncSettings.lastSyncAt">；上次成功同步：{{ formatTime(nutstoreSyncSettings.lastSyncAt) }}</template>
+          </p>
+          <p v-if="nutstoreLastError" class="ai-error" style="margin:0;">{{ nutstoreLastError }}</p>
+
+          <div class="nutstore-history">
+            <label class="ai-field-label">历史版本（{{ nutstoreBackupHistory.length }}）</label>
+            <ul class="nutstore-history-list">
+              <li v-for="item in nutstoreBackupHistory" :key="item.id" class="nutstore-history-item">
+                <div class="nutstore-history-main">
+                  <strong>{{ item.name }}</strong>
+                  <span>{{ item.modifiedAt ? formatTime(item.modifiedAt) : '时间未知' }} · {{ formatBackupSize(item.size) }}</span>
+                </div>
+                <button class="btn btn-sm" :disabled="nutstoreIsSyncing" @click="handleNutstoreRestore(item)">恢复</button>
+              </li>
+              <li v-if="nutstoreBackupHistory.length === 0" class="empty-state">
+                <div class="empty-text">暂无远程备份，请先手动同步或刷新历史</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="ai-settings-card">
           <div class="ai-section-title"><strong>编辑器设置</strong></div>
           <div class="ai-settings-actions">
             <button class="btn" @click="exportCurrentNotebook">导出本册</button>
             <button class="btn" @click="exportNotebookBundle">组合导出</button>
+            <button class="btn" @click="exportAiStore">导出 AI 会话</button>
+            <button class="btn" @click="triggerAiImport">导入 AI 会话</button>
             <button class="btn danger-outline" @click="clearDraft">清空当前页</button>
           </div>
           <label class="toolbar-toggle" title="开启后按 Enter 时，新行将以 '=' 开始">

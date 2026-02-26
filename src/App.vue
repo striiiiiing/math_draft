@@ -17,10 +17,13 @@ const {
   searchQuery,
   renamingSnapshotId,
   fileInputRef,
+  aiFileInputRef,
   copiedSnapshotId,
   recycleBinItems,
   showRecycleBin,
   enterCreatesEquationLine,
+  includeAiOnExport,
+  includeAiOnImport,
   quickTemplates,
   activeNotebook,
   snapshots,
@@ -38,6 +41,11 @@ const {
   aiThinkingMode,
   aiIsRequesting,
   aiLastError,
+  nutstoreSyncSettings,
+  nutstoreBackupHistory,
+  nutstoreIsSyncing,
+  nutstoreLastError,
+  nutstoreConnectionReady,
   activeAiSession,
   activeAiEndpoint,
   activeAiSystemPrompt,
@@ -75,8 +83,11 @@ const {
   exportCurrentNotebook,
   exportNotebookBundle,
   exportAllNotebooks,
+  exportAiStore,
   triggerImport,
   handleFileImport,
+  triggerAiImport,
+  handleAiFileImport,
   copySnapshotData,
   openRecycleBin,
   closeRecycleBin,
@@ -100,6 +111,12 @@ const {
   createAiSystemPromptAction,
   removeAiSystemPrompt,
   updateAiSystemPromptField,
+  setIncludeAiOnExport,
+  setIncludeAiOnImport,
+  updateNutstoreSyncField,
+  syncToNutstore,
+  refreshNutstoreBackups,
+  restoreNutstoreBackup,
 } = useMathScratchWorkbench();
 
 const outputMode = ref('current');
@@ -153,6 +170,7 @@ function clearSelectedSnapshots() {
 <template>
   <div class="app-container">
     <input type="file" ref="fileInputRef" accept=".json" style="display:none;" @change="handleFileImport" />
+    <input type="file" ref="aiFileInputRef" accept=".json" style="display:none;" @change="handleAiFileImport" />
 
     <aside :class="['sidebar workspace-sidebar', { collapsed: isSidebarCollapsed }]">
       <div class="sidebar-header">
@@ -348,6 +366,13 @@ function clearSelectedSnapshots() {
       :ai-thinking-mode="aiThinkingMode"
       :ai-is-requesting="aiIsRequesting"
       :ai-last-error="aiLastError"
+      :include-ai-on-export="includeAiOnExport"
+      :include-ai-on-import="includeAiOnImport"
+      :nutstore-sync-settings="nutstoreSyncSettings"
+      :nutstore-backup-history="nutstoreBackupHistory"
+      :nutstore-is-syncing="nutstoreIsSyncing"
+      :nutstore-last-error="nutstoreLastError"
+      :nutstore-connection-ready="nutstoreConnectionReady"
       :active-ai-session="activeAiSession"
       :active-ai-endpoint="activeAiEndpoint"
       :active-ai-system-prompt="activeAiSystemPrompt"
@@ -370,8 +395,16 @@ function clearSelectedSnapshots() {
       :create-ai-system-prompt-action="createAiSystemPromptAction"
       :remove-ai-system-prompt="removeAiSystemPrompt"
       :update-ai-system-prompt-field="updateAiSystemPromptField"
+      :set-include-ai-on-export="setIncludeAiOnExport"
+      :set-include-ai-on-import="setIncludeAiOnImport"
+      :update-nutstore-sync-field="updateNutstoreSyncField"
+      :sync-to-nutstore="syncToNutstore"
+      :refresh-nutstore-backups="refreshNutstoreBackups"
+      :restore-nutstore-backup="restoreNutstoreBackup"
       :export-current-notebook="exportCurrentNotebook"
       :export-notebook-bundle="exportNotebookBundle"
+      :export-ai-store="exportAiStore"
+      :trigger-ai-import="triggerAiImport"
       :clear-draft="clearDraft"
     />
     <div v-if="showRecycleBin" class="recycle-overlay" @click.self="closeRecycleBin">

@@ -27,16 +27,52 @@ export function setupWorkbenchLifecycle(ctx) {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    includeAiOnExport,
+    includeAiOnImport,
+    nutstoreSyncSettings,
+    nutstoreConnectionReady,
     ACTIVE_NOTEBOOK_KEY,
     NOTEBOOKS_KEY,
     RECYCLE_BIN_KEY,
     ENTER_EQUATION_LINE_ON_ENTER_KEY,
     AI_ASSISTANT_KEY,
+    IMPORT_EXPORT_OPTIONS_KEY,
+    NUTSTORE_SYNC_KEY,
+    runNutstoreAutoSync,
   } = ctx;
 
   let saveTimer = null;
   let recycleSaveTimer = null;
   let aiSaveTimer = null;
+  let importExportOptionsSaveTimer = null;
+  let nutstoreSaveTimer = null;
+  let nutstoreAutoSyncTimer = null;
+
+  function clearNutstoreAutoSyncTimer() {
+    if (nutstoreAutoSyncTimer) {
+      clearInterval(nutstoreAutoSyncTimer);
+      nutstoreAutoSyncTimer = null;
+    }
+  }
+
+  function resetNutstoreAutoSyncTimer() {
+    clearNutstoreAutoSyncTimer();
+    const settings = nutstoreSyncSettings?.value || {};
+    if (!settings.autoSyncEnabled) return;
+    if (!nutstoreConnectionReady?.value) return;
+
+    const intervalMinutesRaw = Number(settings.autoSyncMinutes);
+    const intervalMinutes = Number.isFinite(intervalMinutesRaw) && intervalMinutesRaw > 0
+      ? intervalMinutesRaw
+      : 30;
+    const intervalMs = Math.max(60 * 1000, Math.floor(intervalMinutes * 60 * 1000));
+
+    nutstoreAutoSyncTimer = setInterval(() => {
+      if (typeof runNutstoreAutoSync === 'function') {
+        void runNutstoreAutoSync();
+      }
+    }, intervalMs);
+  }
 
   function handleGlobalShortcuts(event) {
     const withMeta = event.ctrlKey || event.metaKey;
@@ -50,6 +86,7 @@ export function setupWorkbenchLifecycle(ctx) {
   onMounted(() => {
     initializeState();
     window.addEventListener('keydown', handleGlobalShortcuts);
+    resetNutstoreAutoSyncTimer();
   });
 
   onUnmounted(() => {
@@ -57,6 +94,9 @@ export function setupWorkbenchLifecycle(ctx) {
     clearTimeout(saveTimer);
     clearTimeout(recycleSaveTimer);
     clearTimeout(aiSaveTimer);
+    clearTimeout(importExportOptionsSaveTimer);
+    clearTimeout(nutstoreSaveTimer);
+    clearNutstoreAutoSyncTimer();
     historyActions.disposeHistoryActions();
   });
 
@@ -134,4 +174,26 @@ export function setupWorkbenchLifecycle(ctx) {
     },
     { deep: true },
   );
+
+  watch([includeAiOnExport, includeAiOnImport], () => {
+    clearTimeout(importExportOptionsSaveTimer);
+    importExportOptionsSaveTimer = setTimeout(() => {
+      localStorage.setItem(IMPORT_EXPORT_OPTIONS_KEY, JSON.stringify({
+        includeAiOnExport: Boolean(includeAiOnExport.value),
+        includeAiOnImport: Boolean(includeAiOnImport.value),
+      }));
+    }, 200);
+  }, { deep: true });
+
+  watch(nutstoreSyncSettings, (settings) => {
+    clearTimeout(nutstoreSaveTimer);
+    nutstoreSaveTimer = setTimeout(() => {
+      localStorage.setItem(NUTSTORE_SYNC_KEY, JSON.stringify(settings));
+    }, 300);
+    resetNutstoreAutoSyncTimer();
+  }, { deep: true });
+
+  watch(nutstoreConnectionReady, () => {
+    resetNutstoreAutoSyncTimer();
+  });
 }

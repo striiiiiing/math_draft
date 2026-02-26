@@ -4,6 +4,8 @@ export const ACTIVE_NOTEBOOK_KEY = 'math-scratch.active-notebook.v3';
 export const RECYCLE_BIN_KEY = 'math-scratch.recycle-bin.v1';
 export const ENTER_EQUATION_LINE_ON_ENTER_KEY = 'math-scratch.enter-equation-line-on-enter.v1';
 export const AI_ASSISTANT_KEY = 'math-scratch.ai-assistant.v1';
+export const NUTSTORE_SYNC_KEY = 'math-scratch.nutstore-sync.v1';
+export const IMPORT_EXPORT_OPTIONS_KEY = 'math-scratch.import-export-options.v1';
 
 export const SNAPSHOT_LIMIT = 200;
 export const RECYCLE_BIN_LIMIT = 400;

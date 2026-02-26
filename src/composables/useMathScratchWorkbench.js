@@ -3,8 +3,10 @@ import {
   ACTIVE_NOTEBOOK_KEY,
   AI_ASSISTANT_KEY,
   ENTER_EQUATION_LINE_ON_ENTER_KEY,
+  IMPORT_EXPORT_OPTIONS_KEY,
   LEGACY_V2_KEY,
   NOTEBOOKS_KEY,
+  NUTSTORE_SYNC_KEY,
   RECYCLE_BIN_KEY,
   RECYCLE_BIN_LIMIT,
   SNAPSHOT_LIMIT,
@@ -39,6 +41,7 @@ import { createHistoryActions } from './workbench/historyActions';
 import { createExportImportActions } from './workbench/exportImportActions';
 import { createAiAssistantActions } from './workbench/aiAssistantActions';
 import { createAiStoreNormalizer } from './workbench/aiStore';
+import { createNutstoreSyncActions, normalizeNutstoreSyncSettings } from './workbench/nutstoreSyncActions';
 import { resolveAiContextPayloadForState, summarizeAiContextPayload } from './workbench/aiContext';
 import { setupWorkbenchLifecycle } from './workbench/workbenchLifecycle';
 
@@ -58,10 +61,13 @@ export function useMathScratchWorkbench() {
   const searchQuery = ref('');
   const renamingSnapshotId = ref(null);
   const fileInputRef = ref(null);
+  const aiFileInputRef = ref(null);
   const copiedSnapshotId = ref(null);
   const recycleBinItems = ref([]);
   const showRecycleBin = ref(false);
   const enterCreatesEquationLine = ref(true);
+  const includeAiOnExport = ref(true);
+  const includeAiOnImport = ref(true);
 
   const aiSessions = ref([]);
   const activeAiSessionId = ref('');
@@ -74,6 +80,10 @@ export function useMathScratchWorkbench() {
   const aiThinkingMode = ref('off');
   const aiIsRequesting = ref(false);
   const aiLastError = ref('');
+  const nutstoreSyncSettings = ref(normalizeNutstoreSyncSettings({}));
+  const nutstoreBackupHistory = ref([]);
+  const nutstoreIsSyncing = ref(false);
+  const nutstoreLastError = ref('');
 
   const mathFieldRefs = new Map();
 
@@ -95,6 +105,10 @@ export function useMathScratchWorkbench() {
   const activeAiSession = computed(() => aiSessions.value.find((item) => item.id === activeAiSessionId.value) || null);
   const activeAiEndpoint = computed(() => aiEndpoints.value.find((item) => item.id === activeAiEndpointId.value) || null);
   const activeAiSystemPrompt = computed(() => aiSystemPrompts.value.find((item) => item.id === activeAiSystemPromptId.value) || null);
+  const nutstoreConnectionReady = computed(() => {
+    const settings = normalizeNutstoreSyncSettings(nutstoreSyncSettings.value);
+    return Boolean(settings.baseUrl && settings.username && settings.password);
+  });
 
   const { normalizeAiStore } = createAiStoreNormalizer({ uid, nowIso });
 
@@ -184,6 +198,18 @@ export function useMathScratchWorkbench() {
     notebooks,
     selectedSnapshotIds,
     fileInputRef,
+    aiFileInputRef,
+    includeAiOnExport,
+    includeAiOnImport,
+    aiSessions,
+    activeAiSessionId,
+    aiEndpoints,
+    activeAiEndpointId,
+    aiSystemPrompts,
+    activeAiSystemPromptId,
+    aiContextMode,
+    aiThinkingMode,
+    normalizeAiStore,
     selectNotebook: lineActions.selectNotebook,
     nowIso,
     sanitizeFileName,
@@ -207,6 +233,34 @@ export function useMathScratchWorkbench() {
     aiIsRequesting,
     aiLastError,
     resolveAiContextPayload,
+  });
+
+  const nutstoreActions = createNutstoreSyncActions({
+    notebooks,
+    activeNotebookId,
+    recycleBinItems,
+    enterCreatesEquationLine,
+    aiSessions,
+    activeAiSessionId,
+    aiEndpoints,
+    activeAiEndpointId,
+    aiSystemPrompts,
+    activeAiSystemPromptId,
+    aiContextMode,
+    aiThinkingMode,
+    includeAiOnExport,
+    includeAiOnImport,
+    nutstoreSyncSettings,
+    nutstoreBackupHistory,
+    nutstoreIsSyncing,
+    nutstoreLastError,
+    deepClone,
+    nowIso,
+    migrateNotebooksToV3,
+    sanitizeRecycleBinArray,
+    createNotebook,
+    normalizeAiStore,
+    selectNotebook: lineActions.selectNotebook,
   });
 
   function initializeState() {
@@ -238,6 +292,12 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId.value = aiStore.activeSystemPromptId;
     aiContextMode.value = aiStore.contextMode;
     aiThinkingMode.value = aiStore.thinkingMode;
+    nutstoreSyncSettings.value = normalizeNutstoreSyncSettings(safeParse(localStorage.getItem(NUTSTORE_SYNC_KEY), {}));
+    const importExportOptions = safeParse(localStorage.getItem(IMPORT_EXPORT_OPTIONS_KEY), {});
+    includeAiOnExport.value = importExportOptions?.includeAiOnExport !== false;
+    includeAiOnImport.value = importExportOptions?.includeAiOnImport !== false;
+    nutstoreBackupHistory.value = [];
+    nutstoreLastError.value = '';
 
     const storedActiveId = localStorage.getItem(ACTIVE_NOTEBOOK_KEY);
     const targetNotebook = notebooks.value.find((item) => item.id === storedActiveId) || notebooks.value[0];
@@ -270,12 +330,27 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    includeAiOnExport,
+    includeAiOnImport,
+    nutstoreSyncSettings,
+    nutstoreConnectionReady,
     ACTIVE_NOTEBOOK_KEY,
     NOTEBOOKS_KEY,
     RECYCLE_BIN_KEY,
     ENTER_EQUATION_LINE_ON_ENTER_KEY,
     AI_ASSISTANT_KEY,
+    IMPORT_EXPORT_OPTIONS_KEY,
+    NUTSTORE_SYNC_KEY,
+    runNutstoreAutoSync: () => nutstoreActions.syncToNutstore('auto'),
   });
+
+  function setIncludeAiOnExport(value) {
+    includeAiOnExport.value = Boolean(value);
+  }
+
+  function setIncludeAiOnImport(value) {
+    includeAiOnImport.value = Boolean(value);
+  }
 
   return {
     notebooks,
@@ -291,10 +366,13 @@ export function useMathScratchWorkbench() {
     searchQuery,
     renamingSnapshotId,
     fileInputRef,
+    aiFileInputRef,
     copiedSnapshotId,
     recycleBinItems,
     showRecycleBin,
     enterCreatesEquationLine,
+    includeAiOnExport,
+    includeAiOnImport,
     quickTemplates,
     activeNotebook,
     activePage,
@@ -313,6 +391,11 @@ export function useMathScratchWorkbench() {
     aiThinkingMode,
     aiIsRequesting,
     aiLastError,
+    nutstoreSyncSettings,
+    nutstoreBackupHistory,
+    nutstoreIsSyncing,
+    nutstoreLastError,
+    nutstoreConnectionReady,
     activeAiSession,
     activeAiEndpoint,
     activeAiSystemPrompt,
@@ -348,9 +431,12 @@ export function useMathScratchWorkbench() {
     exportCurrentNotebook: exportImportActions.exportCurrentNotebook,
     exportNotebookBundle: exportImportActions.exportNotebookBundle,
     exportAllNotebooks: exportImportActions.exportAllNotebooks,
+    exportAiStore: exportImportActions.exportAiStore,
     exportSnapshot: exportImportActions.exportSnapshot,
     triggerImport: exportImportActions.triggerImport,
     handleFileImport: exportImportActions.handleFileImport,
+    triggerAiImport: exportImportActions.triggerAiImport,
+    handleAiFileImport: exportImportActions.handleAiFileImport,
     copyLineText: historyActions.copyLineText,
     copySelectedLinesAs: historyActions.copySelectedLinesAs,
     copySnapshotData: historyActions.copySnapshotData,
@@ -376,5 +462,11 @@ export function useMathScratchWorkbench() {
     createAiSystemPromptAction: aiActions.createAiSystemPromptAction,
     removeAiSystemPrompt: aiActions.removeAiSystemPrompt,
     updateAiSystemPromptField: aiActions.updateAiSystemPromptField,
+    setIncludeAiOnExport,
+    setIncludeAiOnImport,
+    updateNutstoreSyncField: nutstoreActions.updateNutstoreSyncField,
+    syncToNutstore: () => nutstoreActions.syncToNutstore('manual'),
+    refreshNutstoreBackups: nutstoreActions.refreshNutstoreBackups,
+    restoreNutstoreBackup: nutstoreActions.restoreNutstoreBackup,
   };
 }

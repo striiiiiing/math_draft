@@ -39,6 +39,10 @@ const {
   activeAiSystemPromptId,
   aiContextMode,
   aiThinkingMode,
+  autoSnapshotNamingEnabled,
+  autoSnapshotNamingEndpointId,
+  autoSnapshotNamingSystemPromptId,
+  autoSnapshotNamingThinkingMode,
   aiIsRequesting,
   aiLastError,
   nutstoreSyncSettings,
@@ -113,6 +117,10 @@ const {
   updateAiSystemPromptField,
   setIncludeAiOnExport,
   setIncludeAiOnImport,
+  setAutoSnapshotNamingEnabled,
+  setAutoSnapshotNamingEndpointId,
+  setAutoSnapshotNamingSystemPromptId,
+  setAutoSnapshotNamingThinkingMode,
   updateNutstoreSyncField,
   syncToNutstore,
   refreshNutstoreBackups,
@@ -364,6 +372,10 @@ function clearSelectedSnapshots() {
       :active-ai-system-prompt-id="activeAiSystemPromptId"
       :ai-context-mode="aiContextMode"
       :ai-thinking-mode="aiThinkingMode"
+      :auto-snapshot-naming-enabled="autoSnapshotNamingEnabled"
+      :auto-snapshot-naming-endpoint-id="autoSnapshotNamingEndpointId"
+      :auto-snapshot-naming-system-prompt-id="autoSnapshotNamingSystemPromptId"
+      :auto-snapshot-naming-thinking-mode="autoSnapshotNamingThinkingMode"
       :ai-is-requesting="aiIsRequesting"
       :ai-last-error="aiLastError"
       :include-ai-on-export="includeAiOnExport"
@@ -397,6 +409,10 @@ function clearSelectedSnapshots() {
       :update-ai-system-prompt-field="updateAiSystemPromptField"
       :set-include-ai-on-export="setIncludeAiOnExport"
       :set-include-ai-on-import="setIncludeAiOnImport"
+      :set-auto-snapshot-naming-enabled="setAutoSnapshotNamingEnabled"
+      :set-auto-snapshot-naming-endpoint-id="setAutoSnapshotNamingEndpointId"
+      :set-auto-snapshot-naming-system-prompt-id="setAutoSnapshotNamingSystemPromptId"
+      :set-auto-snapshot-naming-thinking-mode="setAutoSnapshotNamingThinkingMode"
       :update-nutstore-sync-field="updateNutstoreSyncField"
       :sync-to-nutstore="syncToNutstore"
       :refresh-nutstore-backups="refreshNutstoreBackups"

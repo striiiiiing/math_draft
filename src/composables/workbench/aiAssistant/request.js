@@ -28,9 +28,6 @@ export function buildSystemPromptContent(systemPrompt, thinkingMode) {
     ? systemPrompt.content.trim()
     : DEFAULT_SYSTEM_PROMPT;
 
-  if (thinkingMode === 'deep') {
-    return `${basePrompt}\n\n请启用更深入的思考，优先给出完整推导。`;
-  }
   if (thinkingMode === 'on') {
     return `${basePrompt}\n\n请在回答前先进行必要思考。`;
   }

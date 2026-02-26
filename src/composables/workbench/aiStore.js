@@ -80,6 +80,11 @@ export function createAiStoreNormalizer(ctx) {
       .map((item) => createDefaultAiSystemPrompt(item));
   }
 
+  function normalizeThinkingMode(mode, fallback = 'off') {
+    if (mode === 'deep') return 'on';
+    return AI_THINKING_MODE_SET.has(mode) ? mode : fallback;
+  }
+
   function normalizeAiStore(rawValue) {
     const source = rawValue && typeof rawValue === 'object' ? rawValue : {};
 
@@ -102,7 +107,18 @@ export function createAiStoreNormalizer(ctx) {
       ? source.activeSystemPromptId
       : systemPrompts[0].id;
     const contextMode = AI_CONTEXT_MODE_SET.has(source.contextMode) ? source.contextMode : 'current-flow';
-    const thinkingMode = AI_THINKING_MODE_SET.has(source.thinkingMode) ? source.thinkingMode : 'off';
+    const thinkingMode = normalizeThinkingMode(source.thinkingMode, 'off');
+    const autoSnapshotNamingEnabled = Boolean(source.autoSnapshotNamingEnabled);
+
+    const autoSnapshotNamingEndpointId = endpoints.some((item) => item.id === source.autoSnapshotNamingEndpointId)
+      ? source.autoSnapshotNamingEndpointId
+      : activeEndpointId;
+
+    const autoSnapshotNamingSystemPromptId = systemPrompts.some((item) => item.id === source.autoSnapshotNamingSystemPromptId)
+      ? source.autoSnapshotNamingSystemPromptId
+      : activeSystemPromptId;
+
+    const autoSnapshotNamingThinkingMode = normalizeThinkingMode(source.autoSnapshotNamingThinkingMode, 'off');
 
     return {
       sessions,
@@ -113,6 +129,10 @@ export function createAiStoreNormalizer(ctx) {
       activeSystemPromptId,
       contextMode,
       thinkingMode,
+      autoSnapshotNamingEnabled,
+      autoSnapshotNamingEndpointId,
+      autoSnapshotNamingSystemPromptId,
+      autoSnapshotNamingThinkingMode,
     };
   }
 

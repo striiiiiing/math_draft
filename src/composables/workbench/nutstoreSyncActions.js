@@ -328,6 +328,10 @@ function createAiStoreSnapshot(ctx) {
     activeSystemPromptId: ctx.activeAiSystemPromptId.value,
     contextMode: ctx.aiContextMode.value,
     thinkingMode: ctx.aiThinkingMode.value,
+    autoSnapshotNamingEnabled: Boolean(ctx.autoSnapshotNamingEnabled?.value),
+    autoSnapshotNamingEndpointId: ctx.autoSnapshotNamingEndpointId?.value || '',
+    autoSnapshotNamingSystemPromptId: ctx.autoSnapshotNamingSystemPromptId?.value || '',
+    autoSnapshotNamingThinkingMode: ctx.autoSnapshotNamingThinkingMode?.value || 'off',
   };
 }
 
@@ -384,6 +388,10 @@ function applyBackupToRuntime(appState, ctx) {
     ctx.activeAiSystemPromptId.value = aiStore.activeSystemPromptId;
     ctx.aiContextMode.value = aiStore.contextMode;
     ctx.aiThinkingMode.value = aiStore.thinkingMode;
+    if (ctx.autoSnapshotNamingEnabled) ctx.autoSnapshotNamingEnabled.value = aiStore.autoSnapshotNamingEnabled;
+    if (ctx.autoSnapshotNamingEndpointId) ctx.autoSnapshotNamingEndpointId.value = aiStore.autoSnapshotNamingEndpointId;
+    if (ctx.autoSnapshotNamingSystemPromptId) ctx.autoSnapshotNamingSystemPromptId.value = aiStore.autoSnapshotNamingSystemPromptId;
+    if (ctx.autoSnapshotNamingThinkingMode) ctx.autoSnapshotNamingThinkingMode.value = aiStore.autoSnapshotNamingThinkingMode;
   }
 
   const requestedNotebookId = typeof appState?.activeNotebookId === 'string' ? appState.activeNotebookId : '';

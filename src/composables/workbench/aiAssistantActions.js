@@ -1,6 +1,12 @@
 ﻿import { AI_CONTEXT_MODE_SET, AI_THINKING_MODE_SET, DEFAULT_SYSTEM_PROMPT } from './aiAssistant/constants';
 import { clipText, createAiEndpoint, createAiMessage, createAiSession, createAiSystemPrompt } from './aiAssistant/entities';
-import { buildChatCompletionUrl, buildRequestMessages, parseCustomParams, parseResponseAsJson } from './aiAssistant/request';
+import {
+  buildChatCompletionUrl,
+  buildRequestMessages,
+  buildSystemPromptContent,
+  parseCustomParams,
+  parseResponseAsJson,
+} from './aiAssistant/request';
 import { extractAssistantReply, extractAssistantThinking, mergeReplyAndThinking } from './aiAssistant/response';
 import { consumeSseStream, extractStreamDelta } from './aiAssistant/stream';
 
@@ -15,6 +21,10 @@ export function createAiAssistantActions(ctx) {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     aiIsRequesting,
     aiLastError,
     resolveAiContextPayload,
@@ -34,6 +44,14 @@ export function createAiAssistantActions(ctx) {
 
   function getActiveSystemPrompt() {
     return aiSystemPrompts.value.find((item) => item.id === activeAiSystemPromptId.value) || null;
+  }
+
+  function getEndpointById(endpointId) {
+    return aiEndpoints.value.find((item) => item.id === endpointId) || null;
+  }
+
+  function getSystemPromptById(promptId) {
+    return aiSystemPrompts.value.find((item) => item.id === promptId) || null;
   }
 
   function ensureActiveSession() {
@@ -142,6 +160,7 @@ export function createAiAssistantActions(ctx) {
     });
     aiEndpoints.value.unshift(endpoint);
     activeAiEndpointId.value = endpoint.id;
+    if (!autoSnapshotNamingEndpointId.value) autoSnapshotNamingEndpointId.value = endpoint.id;
   }
 
   function removeAiEndpoint(endpointId) {
@@ -162,6 +181,10 @@ export function createAiAssistantActions(ctx) {
     if (activeAiEndpointId.value === endpointId) {
       const fallback = aiEndpoints.value[index] || aiEndpoints.value[index - 1] || aiEndpoints.value[0];
       activeAiEndpointId.value = fallback?.id || aiEndpoints.value[0].id;
+    }
+
+    if (autoSnapshotNamingEndpointId.value === endpointId) {
+      autoSnapshotNamingEndpointId.value = activeAiEndpointId.value || aiEndpoints.value[0].id;
     }
   }
 
@@ -185,6 +208,7 @@ export function createAiAssistantActions(ctx) {
     });
     aiSystemPrompts.value.unshift(prompt);
     activeAiSystemPromptId.value = prompt.id;
+    if (!autoSnapshotNamingSystemPromptId.value) autoSnapshotNamingSystemPromptId.value = prompt.id;
   }
 
   function removeAiSystemPrompt(promptId) {
@@ -205,6 +229,10 @@ export function createAiAssistantActions(ctx) {
       const fallback = aiSystemPrompts.value[index] || aiSystemPrompts.value[index - 1] || aiSystemPrompts.value[0];
       activeAiSystemPromptId.value = fallback?.id || aiSystemPrompts.value[0].id;
     }
+
+    if (autoSnapshotNamingSystemPromptId.value === promptId) {
+      autoSnapshotNamingSystemPromptId.value = activeAiSystemPromptId.value || aiSystemPrompts.value[0].id;
+    }
   }
 
   function updateAiSystemPromptField(promptId, field, value) {
@@ -212,6 +240,125 @@ export function createAiAssistantActions(ctx) {
     if (!prompt) return;
     if (!['name', 'content'].includes(field)) return;
     prompt[field] = typeof value === 'string' ? value : '';
+  }
+
+  function normalizeSnapshotNameFromReply(rawText) {
+    const text = String(rawText || '').trim();
+    if (!text) return '';
+
+    const firstLine = text
+      .replace(/```[\s\S]*?```/g, '')
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .find((item) => item.length > 0) || '';
+    if (!firstLine) return '';
+
+    const withoutQuote = firstLine
+      .replace(/^["'`]+/, '')
+      .replace(/["'`]+$/, '')
+      .replace(/^[\d\-.、)\]]+\s*/, '')
+      .trim();
+
+    const compact = withoutQuote.replace(/\s+/g, ' ').trim();
+    if (!compact) return '';
+    return compact.length <= 32 ? compact : `${compact.slice(0, 32)}…`;
+  }
+
+  function buildAutoSnapshotNamePrompt(lines, notebookName, pageName) {
+    const normalizedLines = Array.isArray(lines) ? lines.map((item) => String(item || '')) : [];
+    const joinedLines = normalizedLines
+      .map((line, index) => `${index + 1}. ${line}`)
+      .join('\n');
+
+    const safeNotebookName = String(notebookName || '').trim() || '未命名草稿本';
+    const safePageName = String(pageName || '').trim() || '未命名页面';
+
+    return [
+      '请为下面这份数学推导流生成一个简洁标题。',
+      '要求：',
+      '1. 只返回标题，不要解释。',
+      '2. 标题长度控制在 8 到 24 个中文字符。',
+      '3. 标题应能概括主要结论或方法。',
+      '',
+      `草稿本：${safeNotebookName}`,
+      `页面：${safePageName}`,
+      '完整推导流（逐行 LaTeX）：',
+      joinedLines || '(空)',
+    ].join('\n');
+  }
+
+  async function generateSnapshotAutoName(payload = {}) {
+    if (!autoSnapshotNamingEnabled?.value) return '';
+
+    const lines = Array.isArray(payload.lines) ? payload.lines : [];
+    const hasContent = lines.some((line) => String(line || '').trim().length > 0);
+    if (!hasContent) return '';
+
+    const endpoint = getEndpointById(autoSnapshotNamingEndpointId.value) || getActiveEndpoint();
+    if (!endpoint) return '';
+
+    const model = String(endpoint.model || '').trim();
+    if (!model) return '';
+
+    const endpointUrl = buildChatCompletionUrl(endpoint.baseUrl);
+    if (!endpointUrl) return '';
+
+    const customParamsResult = parseCustomParams(endpoint.customParams);
+    if (!customParamsResult.ok) {
+      aiLastError.value = customParamsResult.error;
+      return '';
+    }
+
+    const systemPrompt = getSystemPromptById(autoSnapshotNamingSystemPromptId.value) || getActiveSystemPrompt();
+    const thinkingMode = autoSnapshotNamingThinkingMode?.value === 'on' ? 'on' : 'off';
+
+    const messages = [
+      {
+        role: 'system',
+        content: buildSystemPromptContent(systemPrompt, thinkingMode) || DEFAULT_SYSTEM_PROMPT,
+      },
+      {
+        role: 'user',
+        content: buildAutoSnapshotNamePrompt(lines, payload.notebookName, payload.pageName),
+      },
+    ];
+
+    const requestBody = {
+      model,
+      messages,
+      ...customParamsResult.params,
+      stream: false,
+    };
+    if (thinkingMode === 'on') requestBody.enable_thinking = true;
+
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      const token = String(endpoint.apiKey || '').trim();
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await parseResponseAsJson(response);
+        const message = errorPayload?.error?.message || errorPayload?.message || errorPayload?.rawText || `请求失败（HTTP ${response.status}）`;
+        throw new Error(message);
+      }
+
+      const payloadJson = await parseResponseAsJson(response);
+      const reply = extractAssistantReply(payloadJson);
+      const normalizedName = normalizeSnapshotNameFromReply(reply);
+      if (!normalizedName) throw new Error('自动命名返回为空。');
+      return normalizedName;
+    } catch (error) {
+      aiLastError.value = `自动命名失败：${error?.message || '未知错误'}`;
+      return '';
+    }
   }
 
   async function requestAssistantReply(session) {
@@ -408,5 +555,6 @@ export function createAiAssistantActions(ctx) {
     createAiSystemPromptAction,
     removeAiSystemPrompt,
     updateAiSystemPromptField,
+    generateSnapshotAutoName,
   };
 }

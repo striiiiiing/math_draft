@@ -78,6 +78,10 @@ export function useMathScratchWorkbench() {
   const activeAiSystemPromptId = ref('');
   const aiContextMode = ref('current-flow');
   const aiThinkingMode = ref('off');
+  const autoSnapshotNamingEnabled = ref(false);
+  const autoSnapshotNamingEndpointId = ref('');
+  const autoSnapshotNamingSystemPromptId = ref('');
+  const autoSnapshotNamingThinkingMode = ref('off');
   const aiIsRequesting = ref(false);
   const aiLastError = ref('');
   const nutstoreSyncSettings = ref(normalizeNutstoreSyncSettings({}));
@@ -128,6 +132,7 @@ export function useMathScratchWorkbench() {
 
   let moveNotebookToRecycleBin = () => {};
   let moveSnapshotToRecycleBin = () => {};
+  let generateSnapshotAutoName = async () => '';
 
   const lineActions = createLineNotebookActions({
     notebooks,
@@ -175,6 +180,8 @@ export function useMathScratchWorkbench() {
     draftLines,
     snapshotNameDraft,
     activeNotebook,
+    activePage,
+    autoSnapshotNamingEnabled,
     selectedSnapshotIds,
     renamingSnapshotId,
     filteredSnapshots,
@@ -191,6 +198,7 @@ export function useMathScratchWorkbench() {
     focusLine: lineActions.focusLine,
     touchActiveNotebook: lineActions.touchActiveNotebook,
     moveSnapshotToRecycleBin: (...args) => moveSnapshotToRecycleBin(...args),
+    generateSnapshotAutoName: (...args) => generateSnapshotAutoName(...args),
   });
 
   const exportImportActions = createExportImportActions({
@@ -209,6 +217,10 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     normalizeAiStore,
     selectNotebook: lineActions.selectNotebook,
     nowIso,
@@ -230,10 +242,16 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     aiIsRequesting,
     aiLastError,
     resolveAiContextPayload,
   });
+
+  generateSnapshotAutoName = aiActions.generateSnapshotAutoName;
 
   const nutstoreActions = createNutstoreSyncActions({
     notebooks,
@@ -248,6 +266,10 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     includeAiOnExport,
     includeAiOnImport,
     nutstoreSyncSettings,
@@ -292,6 +314,10 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId.value = aiStore.activeSystemPromptId;
     aiContextMode.value = aiStore.contextMode;
     aiThinkingMode.value = aiStore.thinkingMode;
+    autoSnapshotNamingEnabled.value = aiStore.autoSnapshotNamingEnabled;
+    autoSnapshotNamingEndpointId.value = aiStore.autoSnapshotNamingEndpointId;
+    autoSnapshotNamingSystemPromptId.value = aiStore.autoSnapshotNamingSystemPromptId;
+    autoSnapshotNamingThinkingMode.value = aiStore.autoSnapshotNamingThinkingMode;
     nutstoreSyncSettings.value = normalizeNutstoreSyncSettings(safeParse(localStorage.getItem(NUTSTORE_SYNC_KEY), {}));
     const importExportOptions = safeParse(localStorage.getItem(IMPORT_EXPORT_OPTIONS_KEY), {});
     includeAiOnExport.value = importExportOptions?.includeAiOnExport !== false;
@@ -330,6 +356,10 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     includeAiOnExport,
     includeAiOnImport,
     nutstoreSyncSettings,
@@ -350,6 +380,26 @@ export function useMathScratchWorkbench() {
 
   function setIncludeAiOnImport(value) {
     includeAiOnImport.value = Boolean(value);
+  }
+
+  function setAutoSnapshotNamingEnabled(value) {
+    autoSnapshotNamingEnabled.value = Boolean(value);
+  }
+
+  function setAutoSnapshotNamingEndpointId(value) {
+    const target = aiEndpoints.value.find((item) => item.id === value);
+    if (!target) return;
+    autoSnapshotNamingEndpointId.value = target.id;
+  }
+
+  function setAutoSnapshotNamingSystemPromptId(value) {
+    const target = aiSystemPrompts.value.find((item) => item.id === value);
+    if (!target) return;
+    autoSnapshotNamingSystemPromptId.value = target.id;
+  }
+
+  function setAutoSnapshotNamingThinkingMode(value) {
+    autoSnapshotNamingThinkingMode.value = value === 'on' ? 'on' : 'off';
   }
 
   return {
@@ -389,6 +439,10 @@ export function useMathScratchWorkbench() {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     aiIsRequesting,
     aiLastError,
     nutstoreSyncSettings,
@@ -464,6 +518,10 @@ export function useMathScratchWorkbench() {
     updateAiSystemPromptField: aiActions.updateAiSystemPromptField,
     setIncludeAiOnExport,
     setIncludeAiOnImport,
+    setAutoSnapshotNamingEnabled,
+    setAutoSnapshotNamingEndpointId,
+    setAutoSnapshotNamingSystemPromptId,
+    setAutoSnapshotNamingThinkingMode,
     updateNutstoreSyncField: nutstoreActions.updateNutstoreSyncField,
     syncToNutstore: () => nutstoreActions.syncToNutstore('manual'),
     refreshNutstoreBackups: nutstoreActions.refreshNutstoreBackups,

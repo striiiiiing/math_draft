@@ -1,5 +1,5 @@
 export const AI_CONTEXT_MODE_SET = new Set(['none', 'current-flow', 'selected-lines', 'whole-notebook']);
-export const AI_THINKING_MODE_SET = new Set(['off', 'on', 'deep']);
+export const AI_THINKING_MODE_SET = new Set(['off', 'on']);
 
 export const DEFAULT_SYSTEM_PROMPT = [
   '你是数学推导助手。',

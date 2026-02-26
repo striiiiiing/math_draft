@@ -27,6 +27,10 @@ export function setupWorkbenchLifecycle(ctx) {
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     includeAiOnExport,
     includeAiOnImport,
     nutstoreSyncSettings,
@@ -155,6 +159,10 @@ export function setupWorkbenchLifecycle(ctx) {
       activeAiSystemPromptId,
       aiContextMode,
       aiThinkingMode,
+      autoSnapshotNamingEnabled,
+      autoSnapshotNamingEndpointId,
+      autoSnapshotNamingSystemPromptId,
+      autoSnapshotNamingThinkingMode,
     ],
     () => {
       clearTimeout(aiSaveTimer);
@@ -168,6 +176,10 @@ export function setupWorkbenchLifecycle(ctx) {
           activeSystemPromptId: activeAiSystemPromptId.value,
           contextMode: aiContextMode.value,
           thinkingMode: aiThinkingMode.value,
+          autoSnapshotNamingEnabled: Boolean(autoSnapshotNamingEnabled.value),
+          autoSnapshotNamingEndpointId: autoSnapshotNamingEndpointId.value,
+          autoSnapshotNamingSystemPromptId: autoSnapshotNamingSystemPromptId.value,
+          autoSnapshotNamingThinkingMode: autoSnapshotNamingThinkingMode.value,
         };
         localStorage.setItem(AI_ASSISTANT_KEY, JSON.stringify(payload));
       }, 400);

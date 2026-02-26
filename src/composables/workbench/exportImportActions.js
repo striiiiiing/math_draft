@@ -15,6 +15,10 @@
     activeAiSystemPromptId,
     aiContextMode,
     aiThinkingMode,
+    autoSnapshotNamingEnabled,
+    autoSnapshotNamingEndpointId,
+    autoSnapshotNamingSystemPromptId,
+    autoSnapshotNamingThinkingMode,
     normalizeAiStore,
     selectNotebook,
     nowIso,
@@ -43,6 +47,10 @@
       activeSystemPromptId: activeAiSystemPromptId.value,
       contextMode: aiContextMode.value,
       thinkingMode: aiThinkingMode.value,
+      autoSnapshotNamingEnabled: Boolean(autoSnapshotNamingEnabled.value),
+      autoSnapshotNamingEndpointId: autoSnapshotNamingEndpointId.value,
+      autoSnapshotNamingSystemPromptId: autoSnapshotNamingSystemPromptId.value,
+      autoSnapshotNamingThinkingMode: autoSnapshotNamingThinkingMode.value,
     };
   }
 
@@ -79,6 +87,10 @@
     activeAiSystemPromptId.value = normalized.activeSystemPromptId;
     aiContextMode.value = normalized.contextMode;
     aiThinkingMode.value = normalized.thinkingMode;
+    autoSnapshotNamingEnabled.value = normalized.autoSnapshotNamingEnabled;
+    autoSnapshotNamingEndpointId.value = normalized.autoSnapshotNamingEndpointId;
+    autoSnapshotNamingSystemPromptId.value = normalized.autoSnapshotNamingSystemPromptId;
+    autoSnapshotNamingThinkingMode.value = normalized.autoSnapshotNamingThinkingMode;
   }
 
   function importNotebooksFromData(data) {

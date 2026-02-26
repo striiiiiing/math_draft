@@ -17,6 +17,10 @@ const props = defineProps({
   activeAiSystemPromptId: { type: String, default: '' },
   aiContextMode: { type: String, default: 'current-flow' },
   aiThinkingMode: { type: String, default: 'off' },
+  autoSnapshotNamingEnabled: { type: Boolean, default: false },
+  autoSnapshotNamingEndpointId: { type: String, default: '' },
+  autoSnapshotNamingSystemPromptId: { type: String, default: '' },
+  autoSnapshotNamingThinkingMode: { type: String, default: 'off' },
   aiIsRequesting: { type: Boolean, default: false },
   aiLastError: { type: String, default: '' },
   includeAiOnExport: { type: Boolean, default: true },
@@ -51,6 +55,10 @@ const props = defineProps({
   updateAiSystemPromptField: { type: Function, required: true },
   setIncludeAiOnExport: { type: Function, required: true },
   setIncludeAiOnImport: { type: Function, required: true },
+  setAutoSnapshotNamingEnabled: { type: Function, required: true },
+  setAutoSnapshotNamingEndpointId: { type: Function, required: true },
+  setAutoSnapshotNamingSystemPromptId: { type: Function, required: true },
+  setAutoSnapshotNamingThinkingMode: { type: Function, required: true },
   updateNutstoreSyncField: { type: Function, required: true },
   syncToNutstore: { type: Function, required: true },
   refreshNutstoreBackups: { type: Function, required: true },
@@ -73,6 +81,10 @@ const aiSystemPrompts = computed(() => props.aiSystemPrompts);
 const activeAiSystemPromptId = computed(() => props.activeAiSystemPromptId);
 const aiContextMode = computed(() => props.aiContextMode);
 const aiThinkingMode = computed(() => props.aiThinkingMode);
+const autoSnapshotNamingEnabled = computed(() => props.autoSnapshotNamingEnabled);
+const autoSnapshotNamingEndpointId = computed(() => props.autoSnapshotNamingEndpointId);
+const autoSnapshotNamingSystemPromptId = computed(() => props.autoSnapshotNamingSystemPromptId);
+const autoSnapshotNamingThinkingMode = computed(() => props.autoSnapshotNamingThinkingMode);
 const aiIsRequesting = computed(() => props.aiIsRequesting);
 const aiLastError = computed(() => props.aiLastError);
 const includeAiOnExport = computed(() => props.includeAiOnExport);
@@ -108,6 +120,10 @@ const removeAiSystemPrompt = (...args) => props.removeAiSystemPrompt(...args);
 const updateAiSystemPromptField = (...args) => props.updateAiSystemPromptField(...args);
 const setIncludeAiOnExport = (...args) => props.setIncludeAiOnExport(...args);
 const setIncludeAiOnImport = (...args) => props.setIncludeAiOnImport(...args);
+const setAutoSnapshotNamingEnabled = (...args) => props.setAutoSnapshotNamingEnabled(...args);
+const setAutoSnapshotNamingEndpointId = (...args) => props.setAutoSnapshotNamingEndpointId(...args);
+const setAutoSnapshotNamingSystemPromptId = (...args) => props.setAutoSnapshotNamingSystemPromptId(...args);
+const setAutoSnapshotNamingThinkingMode = (...args) => props.setAutoSnapshotNamingThinkingMode(...args);
 const updateNutstoreSyncField = (...args) => props.updateNutstoreSyncField(...args);
 const syncToNutstore = (...args) => props.syncToNutstore(...args);
 const refreshNutstoreBackups = (...args) => props.refreshNutstoreBackups(...args);
@@ -133,8 +149,7 @@ const aiContextOptions = [
 
 const aiThinkingOptions = [
   { value: 'off', label: '关闭（不注入 enable_thinking）' },
-  { value: 'on', label: '标准（enable_thinking=true）' },
-  { value: 'deep', label: '深度（enable_thinking=true）' },
+  { value: 'on', label: '开启（enable_thinking=true）' },
 ];
 
 const markdownRenderer = new MarkdownIt({
@@ -514,6 +529,22 @@ function handleToggleIncludeAiOnImport(event) {
   setIncludeAiOnImport(Boolean(event?.target?.checked));
 }
 
+function handleToggleAutoSnapshotNaming(event) {
+  setAutoSnapshotNamingEnabled(Boolean(event?.target?.checked));
+}
+
+function handleAutoSnapshotNamingEndpointChange(event) {
+  setAutoSnapshotNamingEndpointId(String(event?.target?.value || ''));
+}
+
+function handleAutoSnapshotNamingSystemPromptChange(event) {
+  setAutoSnapshotNamingSystemPromptId(String(event?.target?.value || ''));
+}
+
+function handleAutoSnapshotNamingThinkingModeChange(event) {
+  setAutoSnapshotNamingThinkingMode(String(event?.target?.value || 'off'));
+}
+
 async function handleNutstoreManualSync() {
   await syncToNutstore();
 }
@@ -668,6 +699,28 @@ watch(() => props.aiIsRequesting, async (isRequesting, previous) => {
             <option v-for="item in aiContextOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
           </select>
           <p class="ai-context-summary">{{ aiContextSummary }}</p>
+        </div>
+
+        <div class="ai-settings-card">
+          <div class="ai-section-title"><strong>推导流自动命名</strong></div>
+          <label class="toolbar-toggle">
+            <input :checked="autoSnapshotNamingEnabled" type="checkbox" @change="handleToggleAutoSnapshotNaming" />
+            <span>保存推导流时自动命名</span>
+          </label>
+          <label class="ai-field-label">自动命名 API 节点</label>
+          <select class="input-base ai-select" :value="autoSnapshotNamingEndpointId" @change="handleAutoSnapshotNamingEndpointChange">
+            <option v-for="item in aiEndpoints" :key="item.id" :value="item.id">{{ item.name || item.baseUrl || '未命名节点' }}</option>
+          </select>
+          <label class="ai-field-label">自动命名系统提示词</label>
+          <select class="input-base ai-select" :value="autoSnapshotNamingSystemPromptId" @change="handleAutoSnapshotNamingSystemPromptChange">
+            <option v-for="item in aiSystemPrompts" :key="item.id" :value="item.id">{{ item.name || '未命名提示词' }}</option>
+          </select>
+          <label class="ai-field-label">自动命名思考模式</label>
+          <select class="input-base ai-select" :value="autoSnapshotNamingThinkingMode" @change="handleAutoSnapshotNamingThinkingModeChange">
+            <option value="off">关闭（不注入 enable_thinking）</option>
+            <option value="on">开启（enable_thinking=true）</option>
+          </select>
+          <p class="ai-context-summary">自动命名会把当前整页推导流逐行写入 prompt。</p>
         </div>
 
         <div class="ai-settings-card">

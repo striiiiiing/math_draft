@@ -3,6 +3,8 @@ export function createHistoryActions(ctx) {
     draftLines,
     snapshotNameDraft,
     activeNotebook,
+    activePage,
+    autoSnapshotNamingEnabled,
     selectedSnapshotIds,
     renamingSnapshotId,
     filteredSnapshots,
@@ -16,30 +18,58 @@ export function createHistoryActions(ctx) {
     focusLine,
     touchActiveNotebook,
     moveSnapshotToRecycleBin,
+    generateSnapshotAutoName,
   } = ctx;
 
   let copyStateTimer = null;
+  let snapshotSavePending = false;
 
-  function saveSnapshot() {
+  async function saveSnapshot() {
+    if (snapshotSavePending) return;
+
     const hasContent = draftLines.value.some((line) => line.latex.trim().length > 0);
-    if (!hasContent) return window.alert('当前草稿为空，无法保存推导流。');
+    if (!hasContent) {
+      window.alert('当前草稿为空，无法保存推导流。');
+      return;
+    }
 
     const now = new Date();
-    const fallbackName = `推导 ${now.toLocaleString('zh-CN', { hour12: false })}`;
-    const snapshotName = snapshotNameDraft.value.trim() || fallbackName;
     const notebook = activeNotebook.value;
+    if (!notebook) return;
 
-    if (notebook) {
-      notebook.snapshots.unshift({
-        id: ctx.uid(),
-        name: snapshotName,
-        createdAt: now.toISOString(),
-        lines: draftLines.value.map((line) => line.latex),
-        tags: [],
-      });
-      if (notebook.snapshots.length > SNAPSHOT_LIMIT) notebook.snapshots.splice(SNAPSHOT_LIMIT);
-      notebook.updatedAt = now.toISOString();
+    const lines = draftLines.value.map((line) => line.latex);
+    const fallbackName = `推导 ${now.toLocaleString('zh-CN', { hour12: false })}`;
+    const manualName = snapshotNameDraft.value.trim();
+
+    let snapshotName = manualName;
+    if (!snapshotName && autoSnapshotNamingEnabled?.value && typeof generateSnapshotAutoName === 'function') {
+      snapshotSavePending = true;
+      try {
+        snapshotName = await generateSnapshotAutoName({
+          lines,
+          notebookName: notebook.name || '',
+          pageName: activePage?.value?.name || '',
+        });
+      } finally {
+        snapshotSavePending = false;
+      }
     }
+
+    if (!snapshotName) snapshotName = fallbackName;
+
+    notebook.snapshots.unshift({
+      id: ctx.uid(),
+      name: snapshotName,
+      createdAt: now.toISOString(),
+      lines,
+      tags: [],
+    });
+
+    if (notebook.snapshots.length > SNAPSHOT_LIMIT) {
+      notebook.snapshots.splice(SNAPSHOT_LIMIT);
+    }
+
+    notebook.updatedAt = now.toISOString();
     snapshotNameDraft.value = '';
   }
 
@@ -49,7 +79,7 @@ export function createHistoryActions(ctx) {
     clearLineSelection();
     selectedSnapshotIds.value = [];
     touchActiveNotebook();
-    focusLine(draftLines.value[0].id);
+    if (draftLines.value[0]) focusLine(draftLines.value[0].id);
   }
 
   function startRenameSnapshot(snapshot) {
@@ -57,7 +87,7 @@ export function createHistoryActions(ctx) {
   }
 
   function finishRenameSnapshot(snapshot, event) {
-    const value = event.target.value.trim();
+    const value = String(event?.target?.value || '').trim();
     if (value) snapshot.name = value;
     renamingSnapshotId.value = null;
     if (activeNotebook.value) activeNotebook.value.updatedAt = nowIso();
@@ -66,9 +96,11 @@ export function createHistoryActions(ctx) {
   function deleteSnapshot(snapshotId) {
     const notebook = activeNotebook.value;
     if (!notebook) return;
+
     const snapshot = notebook.snapshots.find((item) => item.id === snapshotId);
     if (!snapshot) return;
     if (!window.confirm(`确认删除记录「${snapshot.name}」吗？`)) return;
+
     moveSnapshotToRecycleBin(snapshot, notebook);
     notebook.snapshots = notebook.snapshots.filter((item) => item.id !== snapshotId);
     notebook.updatedAt = nowIso();
@@ -88,10 +120,12 @@ export function createHistoryActions(ctx) {
     const notebook = activeNotebook.value;
     if (!notebook || selectedSnapshotIds.value.length === 0) return;
     if (!window.confirm(`确认删除选中的 ${selectedSnapshotIds.value.length} 条记录吗？`)) return;
+
     const selectedSet = new Set(selectedSnapshotIds.value);
     notebook.snapshots
       .filter((item) => selectedSet.has(item.id))
       .forEach((item) => moveSnapshotToRecycleBin(item, notebook));
+
     notebook.snapshots = notebook.snapshots.filter((item) => !selectedSet.has(item.id));
     notebook.updatedAt = nowIso();
     selectedSnapshotIds.value = [];
@@ -112,7 +146,7 @@ export function createHistoryActions(ctx) {
       const copied = await writeTextToClipboard(text);
       if (!copied) throw new Error('复制失败');
     } catch {
-      window.alert('复制失败，请检查浏览器权限。');
+      window.alert('复制失败，请检查浏览器剪贴板权限。');
     }
   }
 
@@ -147,7 +181,7 @@ export function createHistoryActions(ctx) {
       const copied = await writeTextToClipboard(resultText);
       if (!copied) throw new Error('复制失败');
     } catch {
-      window.alert('复制失败，请检查浏览器权限。');
+      window.alert('复制失败，请检查浏览器剪贴板权限。');
     }
   }
 
@@ -172,7 +206,7 @@ export function createHistoryActions(ctx) {
       if (!copied) throw new Error('复制失败');
       markSnapshotCopied(snapshot.id);
     } catch {
-      window.alert('复制失败，请检查浏览器权限。');
+      window.alert('复制失败，请检查浏览器剪贴板权限。');
     }
   }
 

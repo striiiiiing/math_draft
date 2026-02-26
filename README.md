@@ -1,6 +1,6 @@
-﻿# Math Scratch
+﻿# Math Draft
 
-Math Scratch 是一个面向数学推导场景的前端工作台（Vue 3 + MathLive）。
+Math Draft 是一个面向数学推导场景的前端工作台（Vue 3 + MathLive）。
 它不是“单条公式编辑器”，而是把推导过程拆成可管理的“行/页/草稿本”，并提供历史快照、回收站、导入导出、坚果云同步和 AI 助手。
 详细使用说明见 `help.md`。
 

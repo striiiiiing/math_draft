@@ -5,6 +5,7 @@ Math Draft 是一个面向数学推导场景的前端工作台（Vue 3 + MathLiv
 详细使用说明见 `help.md`。
 
 可以点击[https://striiiiiing.github.io/math_draft/](https://striiiiiing.github.io/math_draft/)体验
+
 由于跨域问题，使用以上静态网页，WebDav不可用
 
 ## 1. 项目定位

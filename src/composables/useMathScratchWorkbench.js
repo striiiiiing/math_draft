@@ -43,6 +43,10 @@ import { createAiAssistantActions } from './workbench/aiAssistantActions';
 import { createAiStoreNormalizer } from './workbench/aiStore';
 import { createNutstoreSyncActions, normalizeNutstoreSyncSettings } from './workbench/nutstoreSyncActions';
 import { resolveAiContextPayloadForState, summarizeAiContextPayload } from './workbench/aiContext';
+import {
+  decryptAiStoreSecretsFromStorage,
+  decryptNutstoreSettingsSecretsFromStorage,
+} from './workbench/secureStorage';
 import { setupWorkbenchLifecycle } from './workbench/workbenchLifecycle';
 
 export function useMathScratchWorkbench() {
@@ -285,7 +289,7 @@ export function useMathScratchWorkbench() {
     selectNotebook: lineActions.selectNotebook,
   });
 
-  function initializeState() {
+  async function initializeState() {
     let loaded = safeParse(localStorage.getItem(NOTEBOOKS_KEY), null);
 
     if (!loaded) {
@@ -305,7 +309,9 @@ export function useMathScratchWorkbench() {
     recycleBinItems.value = sanitizeRecycleBinArray(safeParse(localStorage.getItem(RECYCLE_BIN_KEY), []));
     enterCreatesEquationLine.value = parseBooleanSetting(localStorage.getItem(ENTER_EQUATION_LINE_ON_ENTER_KEY), true);
 
-    const aiStore = normalizeAiStore(safeParse(localStorage.getItem(AI_ASSISTANT_KEY), {}));
+    const rawAiStore = safeParse(localStorage.getItem(AI_ASSISTANT_KEY), {});
+    const decryptedAiStore = await decryptAiStoreSecretsFromStorage(rawAiStore);
+    const aiStore = normalizeAiStore(decryptedAiStore);
     aiSessions.value = aiStore.sessions;
     activeAiSessionId.value = aiStore.activeSessionId;
     aiEndpoints.value = aiStore.endpoints;
@@ -318,7 +324,10 @@ export function useMathScratchWorkbench() {
     autoSnapshotNamingEndpointId.value = aiStore.autoSnapshotNamingEndpointId;
     autoSnapshotNamingSystemPromptId.value = aiStore.autoSnapshotNamingSystemPromptId;
     autoSnapshotNamingThinkingMode.value = aiStore.autoSnapshotNamingThinkingMode;
-    nutstoreSyncSettings.value = normalizeNutstoreSyncSettings(safeParse(localStorage.getItem(NUTSTORE_SYNC_KEY), {}));
+
+    const rawNutstoreSettings = safeParse(localStorage.getItem(NUTSTORE_SYNC_KEY), {});
+    const decryptedNutstoreSettings = await decryptNutstoreSettingsSecretsFromStorage(rawNutstoreSettings);
+    nutstoreSyncSettings.value = normalizeNutstoreSyncSettings(decryptedNutstoreSettings);
     const importExportOptions = safeParse(localStorage.getItem(IMPORT_EXPORT_OPTIONS_KEY), {});
     includeAiOnExport.value = importExportOptions?.includeAiOnExport !== false;
     includeAiOnImport.value = importExportOptions?.includeAiOnImport !== false;

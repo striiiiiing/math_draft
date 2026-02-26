@@ -1,4 +1,8 @@
 ﻿import { onMounted, onUnmounted, watch } from 'vue';
+import {
+  encryptAiStoreSecretsForStorage,
+  encryptNutstoreSettingsSecretsForStorage,
+} from './secureStorage';
 
 export function setupWorkbenchLifecycle(ctx) {
   const {
@@ -88,7 +92,7 @@ export function setupWorkbenchLifecycle(ctx) {
   }
 
   onMounted(() => {
-    initializeState();
+    void initializeState();
     window.addEventListener('keydown', handleGlobalShortcuts);
     resetNutstoreAutoSyncTimer();
   });
@@ -181,7 +185,13 @@ export function setupWorkbenchLifecycle(ctx) {
           autoSnapshotNamingSystemPromptId: autoSnapshotNamingSystemPromptId.value,
           autoSnapshotNamingThinkingMode: autoSnapshotNamingThinkingMode.value,
         };
-        localStorage.setItem(AI_ASSISTANT_KEY, JSON.stringify(payload));
+        void encryptAiStoreSecretsForStorage(payload)
+          .then((encryptedPayload) => {
+            localStorage.setItem(AI_ASSISTANT_KEY, JSON.stringify(encryptedPayload));
+          })
+          .catch(() => {
+            localStorage.setItem(AI_ASSISTANT_KEY, JSON.stringify(payload));
+          });
       }, 400);
     },
     { deep: true },
@@ -200,7 +210,13 @@ export function setupWorkbenchLifecycle(ctx) {
   watch(nutstoreSyncSettings, (settings) => {
     clearTimeout(nutstoreSaveTimer);
     nutstoreSaveTimer = setTimeout(() => {
-      localStorage.setItem(NUTSTORE_SYNC_KEY, JSON.stringify(settings));
+      void encryptNutstoreSettingsSecretsForStorage(settings)
+        .then((encryptedSettings) => {
+          localStorage.setItem(NUTSTORE_SYNC_KEY, JSON.stringify(encryptedSettings));
+        })
+        .catch(() => {
+          localStorage.setItem(NUTSTORE_SYNC_KEY, JSON.stringify(settings));
+        });
     }, 300);
     resetNutstoreAutoSyncTimer();
   }, { deep: true });

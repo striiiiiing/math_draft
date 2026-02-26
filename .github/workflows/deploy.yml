@@ -1,38 +1,33 @@
 name: Deploy Vue App
 
-# 触发条件：当你推送到 main 分支时自动运行
-# 如果你的分支叫 master，记得把下面的 main 改成 master 哦！
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
-# 任务内容
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest # 给你分配一台临时的 Ubuntu 服务器
+    runs-on: ubuntu-latest
 
     steps:
-    # 1. 拉取代码
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # 2. 安装 Node.js 环境
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20' # 推荐用 LTS 版本
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
-    # 3. 安装依赖 并 构建
-    # 这里其实就是把你本地敲的命令让服务器敲一遍
-    - name: Install and Build
-      run: |
-        npm install
-        npm run build
+      - name: Install and Build
+        run: |
+          npm ci
+          npm run build
 
-    # 4. 部署到 GitHub Pages
-    # 它会自动把生成的 dist 文件夹推送到 gh-pages 分支
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist  # 指定构建产物的目录
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
